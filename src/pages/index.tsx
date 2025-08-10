@@ -12,14 +12,59 @@ import {
   Workflow,
 } from "lucide-react";
 
+// API Configuration
+const API_BASE_URL = "http://localhost:8000";
+
 const BioPlatformApp = () => {
   const [currentView, setCurrentView] = useState("marketplace");
   const [user, setUser] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [content, setContent] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Mock data for demonstration
+  // Simple API call function
+  const apiCall = async (endpoint, options = {}) => {
+    try {
+      const token = localStorage.getItem("access_token");
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+          ...options.headers,
+        },
+        ...options,
+      });
+
+      if (!response.ok) {
+        throw new Error(`API call failed: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (err) {
+      console.error("API Error:", err);
+      setError(err.message);
+      throw err;
+    }
+  };
+
+  // Load content from FastAPI backend
+  const loadContent = async () => {
+    setLoading(true);
+    try {
+      const data = await apiCall("/marketplace/products");
+      setContent(data);
+      setError(null);
+    } catch (err) {
+      // Fallback to mock data if API fails
+      console.log("Using mock data due to API error");
+      setContent(mockContent);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Mock data as fallback
   const mockContent = [
     {
       id: 1,
@@ -64,8 +109,44 @@ const BioPlatformApp = () => {
     },
   ];
 
+  // Login function
+  const handleLogin = async (username, password) => {
+    try {
+      setLoading(true);
+      const response = await apiCall("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ username, password }),
+      });
+
+      localStorage.setItem("access_token", response.access_token);
+      setUser(response.user);
+      setError(null);
+    } catch (err) {
+      setError("Login failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Logout function
+  const handleLogout = () => {
+    localStorage.removeItem("access_token");
+    setUser(null);
+  };
+
+  // Load content on component mount
   useEffect(() => {
-    setContent(mockContent);
+    loadContent();
+  }, []);
+
+  // Load user if token exists
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    if (token && !user) {
+      apiCall("/auth/me")
+        .then(setUser)
+        .catch(() => localStorage.removeItem("access_token"));
+    }
   }, []);
 
   const ContentCard = ({ item }) => (
@@ -97,7 +178,7 @@ const BioPlatformApp = () => {
       </p>
 
       <div className="flex flex-wrap gap-1 mb-4">
-        {item.tags.map((tag, index) => (
+        {item.tags?.map((tag, index) => (
           <span
             key={index}
             className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded"
@@ -111,7 +192,7 @@ const BioPlatformApp = () => {
         <div className="flex items-center space-x-2">
           <span className="text-sm text-gray-500">by</span>
           <span className="text-sm font-medium text-gray-900">
-            {item.creator.username}
+            {item.creator?.username || "Unknown"}
           </span>
         </div>
         <div className="flex items-center space-x-1">
@@ -132,15 +213,86 @@ const BioPlatformApp = () => {
             {item.pricing_model === "ONE_TIME" && "one-time"}
           </span>
         </div>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors">
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors"
+          onClick={() => {
+            // Handle view details - could make another API call here
+            console.log("View details for:", item.id);
+          }}
+        >
           View Details
         </button>
       </div>
     </div>
   );
 
+  // Simple Login Modal Component
+  const LoginModal = ({ isOpen, onClose }) => {
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+
+    if (!isOpen) return null;
+
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      handleLogin(username, password);
+      onClose();
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white p-6 rounded-lg w-96">
+          <h2 className="text-xl font-bold mb-4">Login</h2>
+          <form onSubmit={handleSubmit}>
+            <input
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full p-2 border rounded mb-3"
+              required
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-2 border rounded mb-3"
+              required
+            />
+            <div className="flex space-x-2">
+              <button
+                type="submit"
+                className="flex-1 bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
+                disabled={loading}
+              >
+                {loading ? "Logging in..." : "Login"}
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 bg-gray-300 text-gray-700 p-2 rounded hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
+  const [showLogin, setShowLogin] = useState(false);
+
   const MarketplaceView = () => (
     <div className="space-y-6">
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
+      )}
+
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-8 rounded-lg">
         <h1 className="text-3xl font-bold mb-4">
@@ -164,18 +316,30 @@ const BioPlatformApp = () => {
         </div>
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className="text-center py-8">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-2 text-gray-600">Loading content...</p>
+        </div>
+      )}
+
       {/* Featured Content */}
-      <div>
-        <div className="flex items-center space-x-2 mb-4">
-          <TrendingUp className="w-5 h-5 text-orange-500" />
-          <h2 className="text-2xl font-bold text-gray-900">Featured Content</h2>
+      {!loading && (
+        <div>
+          <div className="flex items-center space-x-2 mb-4">
+            <TrendingUp className="w-5 h-5 text-orange-500" />
+            <h2 className="text-2xl font-bold text-gray-900">
+              Featured Content
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {content.slice(0, 3).map((item) => (
+              <ContentCard key={item.id} item={item} />
+            ))}
+          </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {content.slice(0, 3).map((item) => (
-            <ContentCard key={item.id} item={item} />
-          ))}
-        </div>
-      </div>
+      )}
 
       {/* Categories */}
       <div>
@@ -188,6 +352,10 @@ const BioPlatformApp = () => {
               <div
                 key={category}
                 className="bg-white p-4 rounded-lg border border-gray-200 hover:border-blue-300 cursor-pointer transition-colors"
+                onClick={() => {
+                  // Could filter content by category here
+                  console.log("Filter by category:", category);
+                }}
               >
                 <h3 className="font-semibold text-gray-900">{category}</h3>
                 <p className="text-sm text-gray-600">150+ tools</p>
@@ -203,7 +371,13 @@ const BioPlatformApp = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Creator Dashboard</h1>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-md font-medium hover:bg-blue-700 transition-colors flex items-center space-x-2">
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded-md font-medium hover:bg-blue-700 transition-colors flex items-center space-x-2"
+          onClick={() => {
+            // Handle upload - could make API call here
+            console.log("Upload content");
+          }}
+        >
           <Upload className="w-4 h-4" />
           <span>Upload Content</span>
         </button>
@@ -225,7 +399,9 @@ const BioPlatformApp = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Content Items</p>
-              <p className="text-2xl font-bold text-blue-600">12</p>
+              <p className="text-2xl font-bold text-blue-600">
+                {content.length}
+              </p>
             </div>
             <Code className="w-8 h-8 text-blue-600" />
           </div>
@@ -336,7 +512,10 @@ const BioPlatformApp = () => {
           <div className="flex items-center space-x-4">
             {!user ? (
               <div className="space-x-2">
-                <button className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium">
+                <button
+                  className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium"
+                  onClick={() => setShowLogin(true)}
+                >
                   Sign In
                 </button>
                 <button className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-colors">
@@ -351,6 +530,12 @@ const BioPlatformApp = () => {
                 <span className="text-sm font-medium text-gray-900">
                   {user.username}
                 </span>
+                <button
+                  onClick={handleLogout}
+                  className="text-sm text-gray-600 hover:text-gray-900 ml-2"
+                >
+                  Logout
+                </button>
               </div>
             )}
           </div>
@@ -366,6 +551,7 @@ const BioPlatformApp = () => {
         {currentView === "marketplace" && <MarketplaceView />}
         {currentView === "dashboard" && <CreatorDashboard />}
       </main>
+      <LoginModal isOpen={showLogin} onClose={() => setShowLogin(false)} />
     </div>
   );
 };
