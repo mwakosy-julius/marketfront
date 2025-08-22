@@ -3,14 +3,12 @@ import {
   Search,
   Filter,
   Star,
-  Users,
   Clock,
-  Tag,
   ChevronRight,
   Download,
-  Eye,
 } from "lucide-react";
 
+// Interface for Tool data
 interface Tool {
   id: string;
   name: string;
@@ -25,14 +23,21 @@ interface Tool {
   featured?: boolean;
 }
 
+// Interface for Category data
+interface Category {
+  id: string;
+  name: string;
+  count: number;
+}
+
 const BioinformaticsMarketplace: React.FC = () => {
   const [tools, setTools] = useState<Tool[]>([]);
   const [filteredTools, setFilteredTools] = useState<Tool[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const categories = [
+  const categories: Category[] = [
     { id: "all", name: "All Tools", count: 45 },
     { id: "genomics", name: "Genomics", count: 12 },
     { id: "proteomics", name: "Proteomics", count: 8 },
@@ -41,7 +46,7 @@ const BioinformaticsMarketplace: React.FC = () => {
     { id: "structural", name: "Structural Biology", count: 9 },
   ];
 
-  // Mock data - replace with your API calls
+  // Mock data
   const mockTools: Tool[] = [
     {
       id: "1",
@@ -149,14 +154,14 @@ const BioinformaticsMarketplace: React.FC = () => {
     setFilteredTools(filtered);
   }, [tools, selectedCategory, searchTerm]);
 
-  const formatNumber = (num: number) => {
+  const formatNumber = (num: number): string => {
     if (num >= 1000) {
       return (num / 1000).toFixed(1) + "k";
     }
     return num.toString();
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       month: "short",
