@@ -17,9 +17,9 @@ function App() {
     <Router>
       <div className="App">
         <Routes>
-          <Route path="/" element={<BioinformaticsMarketplace />} />
+          <Route path="/management" element={<BioinformaticsMarketplace />} />
           <Route path="/dashboard" element={<KaidokuDashboard />} />
-          <Route path="/website" element={<KaidokuLanding />} />
+          <Route path="/" element={<KaidokuLanding />} />
           <Route path="/marketplace" element={<Navigate to="/" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
