@@ -1,69 +1,46 @@
-# React + TypeScript + Vite
+# Bioinformatics Tools Marketplace
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Welcome to the **Bioinformatics Tools & Pipelines Marketplace** 🎉
+This platform allows researchers, developers, and creators to **publish, share, and integrate bioinformatics tools** directly into our main analysis platform.
 
-Currently, two official plugins are available:
+All submitted tools are packaged as **Docker containers**, ensuring reproducibility, portability, and seamless integration.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## Expanding the ESLint configuration
+## 🚀 How It Works
+1. **Create** your tool or pipeline and package it in a Docker container.
+2. **Submit** your Dockerfile and metadata following the guidelines below.
+3. **Review & Integration**: Our team tests your tool for compatibility and performance.
+4. **Publish**: Once approved, your tool will appear in the marketplace and can be used by the community.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 📦 Requirements for Tools
+- Must include a valid `Dockerfile`.
+- Must contain clear **entrypoints** (e.g., `CMD` or `ENTRYPOINT` in Docker).
+- Should accept **standard input/output formats** (e.g., FASTA, FASTQ, BAM, VCF).
+- Must include proper **documentation** (usage, parameters, expected input/output).
+- Recommended: Lightweight base images (e.g., `python:3.9-slim`, `alpine`, or `ubuntu`).
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 🛠️ Submission Guidelines
+1. Create a folder under `/tools/your-tool-name/`.
+2. Add the following files:
+   - `Dockerfile` (required)
+   - `tool.yaml` (metadata about your tool, see template below)
+   - `README.md` (tool-specific documentation, usage examples)
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## 📑 Metadata Template (`tool.yaml`)
+```yaml
+name: "Tool Name"
+version: "1.0.0"
+author: "Your Name / Organization"
+description: "Short description of what the tool does"
+input_format: ["FASTA", "FASTQ"]
+output_format: ["VCF", "CSV"]
+entrypoint: "python /app/main.py"
+license: "MIT"
+tags: ["alignment", "variant-calling", "metagenomics"]
